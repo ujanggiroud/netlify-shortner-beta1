@@ -7,7 +7,7 @@
   to = "/admin.html"
   status = 200
 
-# Halaman Link Masking FB
+# Halaman Generator Link Masking FB
 [[redirects]]
   from = "/masking"
   to = "/masking.html"
@@ -23,7 +23,13 @@
   to = "/.netlify/functions/stats"
   status = 200
 
-# Redirect Link Pendek
+# Redirect Link Masking FB (/masking/slug)
+[[redirects]]
+  from = "/masking/:code"
+  to = "/.netlify/functions/redirect?code=:code"
+  status = 200
+
+# Redirect Link Pendek Biasa (/slug)
 [[redirects]]
   from = "/:code"
   to = "/.netlify/functions/redirect?code=:code"
