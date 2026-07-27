@@ -1,5 +1,5 @@
 exports.handler = async (event) => {
-  // Ambil kode slug dari path URL (misal: /kemejabatik1 -> kemejabatik1)
+  const userAgent = event.headers['user-agent'] || '';
   const pathParts = event.path.split('/').filter(Boolean);
   const code = event.queryStringParameters?.code || pathParts[0];
 
@@ -10,7 +10,6 @@ exports.handler = async (event) => {
     return { statusCode: 404, body: "Link tidak ditemukan." };
   }
 
-  // 1. Ambil data link dari Upstash Redis
   const res = await fetch(`${redisUrl}/get/link:${code}`, {
     headers: { Authorization: `Bearer ${redisToken}` }
   });
@@ -23,7 +22,6 @@ exports.handler = async (event) => {
   const linkData = JSON.parse(data.result);
   const today = new Date().toISOString().split('T')[0];
 
-  // 2. Hitung Statistik Harian
   fetch(`${redisUrl}/pipeline`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
@@ -35,13 +33,24 @@ exports.handler = async (event) => {
     ])
   }).catch(() => {});
 
-  // 3. Render HTML Interstitial untuk Pixel lalu Redirect
+  const isFbCrawler = userAgent.includes('facebookexternalhit') || userAgent.includes('Facebot');
+  const titleText = linkData.title || 'Promo Shopee Spesial';
+  const imageUrl = linkData.image || '';
+
   const html = `
     <!DOCTYPE html>
-    <html>
+    <html lang="id">
     <head>
       <meta charset="UTF-8">
-      <title>Mengarahkan ke Shopee...</title>
+      <title>${titleText}</title>
+      
+      <!-- Open Graph Meta Tags untuk Facebook -->
+      <meta property="og:type" content="article" />
+      <meta property="og:title" content="${titleText}" />
+      <meta property="og:description" content="Klik untuk melihat detail selengkapnya." />
+      ${imageUrl ? `<meta property="og:image" content="${imageUrl}" />` : ''}
+      <meta property="og:url" content="${linkData.url}" />
+
       ${linkData.pixelId ? `
       <!-- Meta Pixel Code -->
       <script>
@@ -71,9 +80,11 @@ exports.handler = async (event) => {
         <p>Mengarahkan ke Shopee...</p>
       </div>
       <script>
+        ${!isFbCrawler ? `
         setTimeout(function() {
           window.location.href = "${linkData.url}";
         }, 500);
+        ` : ''}
       </script>
     </body>
     </html>
