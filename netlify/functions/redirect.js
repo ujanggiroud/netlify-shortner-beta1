@@ -1,11 +1,10 @@
 exports.handler = async (event) => {
   const userAgent = event.headers['user-agent'] || event.headers['User-Agent'] || '';
   
-  // Ekstrak kode slug dari path (dukung format /slug atau /masking/slug)
   const pathParts = event.path.split('/').filter(Boolean);
   let code = event.queryStringParameters?.code;
   if (!code) {
-    code = pathParts[pathParts.length - 1]; // ambil bagian slug terakhir
+    code = pathParts[pathParts.length - 1];
   }
 
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
@@ -27,7 +26,6 @@ exports.handler = async (event) => {
   const linkData = JSON.parse(data.result);
   const today = new Date().toISOString().split('T')[0];
 
-  // Catat statistik di background
   fetch(`${redisUrl}/pipeline`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
@@ -40,7 +38,9 @@ exports.handler = async (event) => {
   }).catch(() => {});
 
   const isFbCrawler = userAgent.toLowerCase().includes('facebookexternalhit') || userAgent.toLowerCase().includes('facebot');
-  const titleText = linkData.title || 'Promo Shopee Spesial';
+  
+  // Jika judul diisi, pakai judulnya. Jika kosong, gunakan karakter spasi transparan agar tidak ada teks tebal
+  const titleText = linkData.title && linkData.title.trim() !== '' ? linkData.title : '&#8203;';
   const imageUrl = linkData.image || '';
 
   const html = `<!DOCTYPE html>
@@ -49,16 +49,16 @@ exports.handler = async (event) => {
   <meta charset="UTF-8">
   <title>${titleText}</title>
   
-  <!-- Facebook Open Graph Meta Tags -->
+  <!-- Open Graph Meta Tags (1:1 Square Ratio) -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="${titleText}" />
-  <meta property="og:description" content="Klik untuk melihat detail promo selengkapnya." />
+  <meta property="og:description" content="&#8203;" />
   ${imageUrl ? `
   <meta property="og:image" content="${imageUrl}" />
   <meta property="og:image:secure_url" content="${imageUrl}" />
   <meta property="og:image:type" content="image/jpeg" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:width" content="1080" />
+  <meta property="og:image:height" content="1080" />
   ` : ''}
 
   ${linkData.pixelId ? `
