@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generator Link Masking Facebook</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  <style>
+    body { padding: 20px; max-width: 800px; margin: 0 auto; }
+    #resultBox { display: none; background: #e8f5e9; border: 1px solid #4caf50; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .preview-img { max-width: 200px; border-radius: 8px; margin-top: 10px; display: none; }
+  </style>
+</head>
+<body>
+  <h2>🖼️ Generator Link Masking Facebook</h2>
+  
+  <article>
+    <div id="resultBox">
+      <small style="color: #2e7d32;"><strong>Berhasil Dibuat! Link siap di-post ke FB:</strong></small>
+      <div style="display: flex; gap: 10px; margin-top: 5px;">
+        <input type="text" id="generatedUrl" readonly style="margin-bottom: 0;">
+        <button type="button" onclick="copyResultLink()" style="width: auto; margin: 0;">Copy Link</button>
+      </div>
+      <small style="color: #666; display: block; margin-top: 8px;">
+        *Tempel link ini di Facebook post, tunggu gambarnya muncul, lalu hapus teks linknya sebelum di-publish.
+      </small>
+    </div>
+
+    <form id="maskingForm">
+      <label>
+        1. Target Link Shopee Affiliate
+        <input type="url" id="url" placeholder="https://s.shopee.co.id/..." required>
+      </label>
+
+      <label>
+        2. Nama Slug (Untuk URL Facebook)
+        <input type="text" id="code" placeholder="contoh: promo-baju-viral" required>
+        <small>Tanpa spasi, gunakan tanda strip (-).</small>
+      </label>
+
+      <label>
+        3. Judul / Description Pratinjau Facebook (Opsional)
+        <input type="text" id="title" placeholder="contoh: Diskon 50% Khusus Hari Ini!">
+      </label>
+
+      <label>
+        4. Upload Gambar Thumbnail FB (Maks 2MB)
+        <input type="file" id="imageFile" accept="image/*" required>
+        <small>Rekomendasi rasio gambar 1:1 atau 1200x630px.</small>
+      </label>
+      <img id="imgPreview" class="preview-img" alt="Pratinjau Gambar">
+
+      <br><br>
+      <label>
+        Slot Meta Pixel ID (Opsional)
+        <input type="text" id="pixelId" placeholder="1234567890">
+      </label>
+
+      <label>
+        Keterangan / Tag
+        <input type="text" id="tag" value="Masking FB" placeholder="contoh: Masking FB">
+      </label>
+
+      <button type="submit" id="btnSubmit">Buat Link Masking Sekarang</button>
+    </form>
+  </article>
+
+  <script>
+    // DATA CLOUDINARY
+    const CLOUDINARY_CLOUD_NAME = 'zxscrlcq';
+    const CLOUDINARY_UPLOAD_PRESET = 'shopee_preset'; // GANTI DENGAN UPLOAD PRESET UNSIGNED KAMU
+
+    const imageFileInput = document.getElementById('imageFile');
+    const imgPreview = document.getElementById('imgPreview');
+
+    imageFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        imgPreview.src = URL.createObjectURL(file);
+        imgPreview.style.display = 'block';
+      }
+    });
+
+    async function uploadImageToCloudinary(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) throw new Error('Gagal upload gambar. Cek nama Upload Preset!');
+      const data = await res.json();
+      return data.secure_url;
+    }
+
+    document.getElementById('maskingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmit');
+      btn.ariaBusy = "true";
+
+      try {
+        const file = imageFileInput.files[0];
+        if (!file) {
+          alert('Pilih gambar thumbnail terlebih dahulu!');
+          btn.ariaBusy = "false";
+          return;
+        }
+
+        btn.innerText = "Mengunggah gambar...";
+        const imageUrl = await uploadImageToCloudinary(file);
+
+        btn.innerText = "Menyimpan link...";
+        const codeVal = document.getElementById('code').value.trim();
+        const payload = {
+          code: codeVal,
+          url: document.getElementById('url').value.trim(),
+          title: document.getElementById('title').value.trim() || 'Klik untuk lihat detail promo',
+          image: imageUrl,
+          pixelId: document.getElementById('pixelId').value.trim(),
+          tag: document.getElementById('tag').value.trim() || 'Masking FB'
+        };
+
+        const res = await fetch('/api/shorten', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const fullUrl = `${window.location.origin}/${codeVal}`;
+          document.getElementById('generatedUrl').value = fullUrl;
+          document.getElementById('resultBox').style.display = 'block';
+          navigator.clipboard.writeText(fullUrl).catch(() => {});
+          alert('Link Masking FB Berhasil Dibuat & Tersalin!');
+        } else {
+          alert('Gagal membuat link. Kode slug mungkin sudah terpakai.');
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan: ' + err.message);
+      } finally {
+        btn.ariaBusy = "false";
+        btn.innerText = "Buat Link Masking Sekarang";
+      }
+    });
+
+    function copyResultLink() {
+      const val = document.getElementById('generatedUrl').value;
+      navigator.clipboard.writeText(val).then(() => {
+        alert('Link tersalin!');
+      });
+    }
+  </script>
+</body>
+</html>
