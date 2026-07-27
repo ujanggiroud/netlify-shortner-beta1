@@ -1,0 +1,23 @@
+[build]
+  publish = "public"
+
+# Routing link pendek ke function redirect
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/api/shorten"
+  to = "/.netlify/functions/shorten"
+  status = 200
+
+[[redirects]]
+  from = "/api/stats"
+  to = "/.netlify/functions/stats"
+  status = 200
+
+[[redirects]]
+  from = "/:code"
+  to = "/.netlify/functions/redirect?code=:code"
+  status = 200

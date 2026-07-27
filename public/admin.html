@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopee Shortener Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  <style>
+    body { padding: 20px; max-width: 900px; margin: 0 auto; }
+    .badge { background: #ee4d2d; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+  </style>
+</head>
+<body>
+  <h2>🛒 Shopee Shortener + Meta Pixel</h2>
+  
+  <article>
+    <header><strong>Buat Link Baru</strong></header>
+    <form id="shortenForm">
+      <div class="grid">
+        <label>
+          Custom Slug / Kode Link
+          <input type="text" id="code" placeholder="contoh: baju-a" required>
+        </label>
+        <label>
+          Slot 1: Meta Pixel ID
+          <input type="text" id="pixelId" placeholder="1234567890 (Opsional)">
+        </label>
+      </div>
+
+      <label>
+        Slot 2: Link Shopee Affiliate
+        <input type="url" id="url" placeholder="https://s.shopee.co.id/..." required>
+      </label>
+
+      <label>
+        Slot 3: Keterangan / Tag (Untuk Filter)
+        <input type="text" id="tag" placeholder="contoh: Baju A, Elektronik, Campaign IG" required>
+      </label>
+
+      <button type="submit" id="btnSubmit">Simpan & Buat Link</button>
+    </form>
+  </article>
+
+  <article>
+    <header><strong>Statistik Harian & Daftar Link</strong></header>
+    <table role="grid">
+      <thead>
+        <tr>
+          <th>Kode Link</th>
+          <th>Keterangan (Tag)</th>
+          <th>Pixel ID</th>
+          <th>Klik Hari Ini</th>
+          <th>Total Klik</th>
+        </tr>
+      </thead>
+      <tbody id="statsTable">
+        <tr><td colspan="5">Memuat data statistik...</td></tr>
+      </tbody>
+    </table>
+  </article>
+
+  <script>
+    const form = document.getElementById('shortenForm');
+    
+    // Simpan Link Baru
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmit');
+      btn.ariaBusy = "true";
+
+      const payload = {
+        code: document.getElementById('code').value,
+        pixelId: document.getElementById('pixelId').value,
+        url: document.getElementById('url').value,
+        tag: document.getElementById('tag').value
+      };
+
+      const res = await fetch('/api/shorten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      btn.ariaBusy = "false";
+      if (res.ok) {
+        alert('Link berhasil dibuat!');
+        form.reset();
+        loadStats();
+      } else {
+        alert('Gagal membuat link. Kode mungkin sudah terpakai.');
+      }
+    });
+
+    // Load Statistik
+    async function loadStats() {
+      const res = await fetch('/api/stats');
+      const data = await res.json();
+      const tbody = document.getElementById('statsTable');
+      
+      if(data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">Belum ada link tersimpan.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.map(item => `
+        <tr>
+          <td><a href="/${item.code}" target="_blank">/${item.code}</a></td>
+          <td><span class="badge">${item.tag}</span></td>
+          <td>${item.pixelId || '-'}</td>
+          <td><strong>${item.todayClicks}</strong></td>
+          <td>${item.totalClicks}</td>
+        </tr>
+      `).join('');
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>
