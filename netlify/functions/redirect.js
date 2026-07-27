@@ -1,5 +1,8 @@
 exports.handler = async (event) => {
-  const code = event.queryStringParameters.code;
+  // Ambil kode slug dari path URL (misal: /kemejabatik1 -> kemejabatik1)
+  const pathParts = event.path.split('/').filter(Boolean);
+  const code = event.queryStringParameters?.code || pathParts[0];
+
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -18,9 +21,9 @@ exports.handler = async (event) => {
   }
 
   const linkData = JSON.parse(data.result);
-  const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
 
-  // 2. Hitung Statistik Harian (Secara Asynchronous ke Redis)
+  // 2. Hitung Statistik Harian
   fetch(`${redisUrl}/pipeline`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
@@ -32,7 +35,7 @@ exports.handler = async (event) => {
     ])
   }).catch(() => {});
 
-  // 3. Render HTML Interstitial untuk eksekusi Meta Pixel lalu redirect
+  // 3. Render HTML Interstitial untuk Pixel lalu Redirect
   const html = `
     <!DOCTYPE html>
     <html>
