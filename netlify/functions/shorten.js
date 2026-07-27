@@ -18,12 +18,14 @@ exports.handler = async (event) => {
     createdAt: new Date().toISOString()
   });
 
+  // Simpan detail link ke Upstash Redis
   await fetch(`${redisUrl}/set/link:${code}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${redisToken}` },
     body: payload
   });
 
+  // Tambahkan slug ke daftar list link
   await fetch(`${redisUrl}/sadd/all_links`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${redisToken}` },
