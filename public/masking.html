@@ -34,13 +34,13 @@
 
       <label>
         2. Nama Slug (Untuk URL Facebook)
-        <input type="text" id="code" placeholder="contoh: promo-baju-viral" required>
+        <input type="text" id="code" placeholder="contoh: kemejabatik" required>
         <small>Tanpa spasi, gunakan tanda strip (-).</small>
       </label>
 
       <label>
         3. Judul / Description Pratinjau Facebook (Opsional)
-        <input type="text" id="title" placeholder="contoh: Diskon 50% Khusus Hari Ini!">
+        <input type="text" id="title" placeholder="contoh: harga heran">
       </label>
 
       <label>
@@ -66,9 +66,8 @@
   </article>
 
   <script>
-    // DATA CLOUDINARY
     const CLOUDINARY_CLOUD_NAME = 'zxscrlcq';
-    const CLOUDINARY_UPLOAD_PRESET = 'shopee_preset'; // GANTI DENGAN UPLOAD PRESET UNSIGNED KAMU
+    const CLOUDINARY_UPLOAD_PRESET = 'NAMA_PRESET_KAMU'; // Masukkan upload preset unsigned kamu
 
     const imageFileInput = document.getElementById('imageFile');
     const imgPreview = document.getElementById('imgPreview');
@@ -93,7 +92,13 @@
 
       if (!res.ok) throw new Error('Gagal upload gambar. Cek nama Upload Preset!');
       const data = await res.json();
-      return data.secure_url;
+      
+      // Paksa format output menjadi JPG agar ramah untuk Facebook Crawler
+      let cleanUrl = data.secure_url;
+      if (!cleanUrl.match(/\.(jpg|jpeg|png)$/i)) {
+        cleanUrl = cleanUrl.replace(/\/upload\//, '/upload/f_jpg/');
+      }
+      return cleanUrl;
     }
 
     document.getElementById('maskingForm').addEventListener('submit', async (e) => {
@@ -130,7 +135,8 @@
         });
 
         if (res.ok) {
-          const fullUrl = `${window.location.origin}/${codeVal}`;
+          // FORMAT LINK BARU: /masking/slug
+          const fullUrl = `${window.location.origin}/masking/${codeVal}`;
           document.getElementById('generatedUrl').value = fullUrl;
           document.getElementById('resultBox').style.display = 'block';
           navigator.clipboard.writeText(fullUrl).catch(() => {});
