@@ -8,7 +8,7 @@
   <style>
     body { padding: 20px; max-width: 900px; margin: 0 auto; }
     .badge { background: #ee4d2d; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+    .btn-copy { padding: 3px 8px; font-size: 12px; width: auto; margin: 0; display: inline-block; }
   </style>
 </head>
 <body>
@@ -52,10 +52,11 @@
           <th>Pixel ID</th>
           <th>Klik Hari Ini</th>
           <th>Total Klik</th>
+          <th>Aksi</th>
         </tr>
       </thead>
       <tbody id="statsTable">
-        <tr><td colspan="5">Memuat data statistik...</td></tr>
+        <tr><td colspan="6">Memuat data statistik...</td></tr>
       </tbody>
     </table>
   </article>
@@ -63,17 +64,18 @@
   <script>
     const form = document.getElementById('shortenForm');
     
-    // Simpan Link Baru
+    // Simpan Link Baru & Auto Copy
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('btnSubmit');
       btn.ariaBusy = "true";
 
+      const codeVal = document.getElementById('code').value.trim();
       const payload = {
-        code: document.getElementById('code').value,
-        pixelId: document.getElementById('pixelId').value,
-        url: document.getElementById('url').value,
-        tag: document.getElementById('tag').value
+        code: codeVal,
+        pixelId: document.getElementById('pixelId').value.trim(),
+        url: document.getElementById('url').value.trim(),
+        tag: document.getElementById('tag').value.trim()
       };
 
       const res = await fetch('/api/shorten', {
@@ -84,13 +86,29 @@
 
       btn.ariaBusy = "false";
       if (res.ok) {
-        alert('Link berhasil dibuat!');
+        const fullUrl = `${window.location.origin}/${codeVal}`;
+        
+        // Copy otomatis ke clipboard
+        navigator.clipboard.writeText(fullUrl).then(() => {
+          alert(`Berhasil dibuat & Link otomatis tersalin! \n\nLink: ${fullUrl}`);
+        }).catch(() => {
+          alert(`Berhasil dibuat!\n\nLink: ${fullUrl}`);
+        });
+
         form.reset();
         loadStats();
       } else {
         alert('Gagal membuat link. Kode mungkin sudah terpakai.');
       }
     });
+
+    // Copy Manual via Tombol
+    function copyLink(code) {
+      const fullUrl = `${window.location.origin}/${code}`;
+      navigator.clipboard.writeText(fullUrl).then(() => {
+        alert(`Link tersalin: ${fullUrl}`);
+      });
+    }
 
     // Load Statistik
     async function loadStats() {
@@ -99,7 +117,7 @@
       const tbody = document.getElementById('statsTable');
       
       if(data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5">Belum ada link tersimpan.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6">Belum ada link tersimpan.</td></tr>';
         return;
       }
 
@@ -110,6 +128,7 @@
           <td>${item.pixelId || '-'}</td>
           <td><strong>${item.todayClicks}</strong></td>
           <td>${item.totalClicks}</td>
+          <td><button class="btn-copy" onclick="copyLink('${item.code}')">Copy</button></td>
         </tr>
       `).join('');
     }
