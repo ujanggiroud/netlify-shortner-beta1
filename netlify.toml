@@ -1,10 +1,16 @@
 [build]
   publish = "public"
 
-# Routing link pendek ke function redirect
+# Halaman Admin Shortener Biasa
 [[redirects]]
   from = "/admin"
   to = "/admin.html"
+  status = 200
+
+# Halaman Link Masking FB
+[[redirects]]
+  from = "/masking"
+  to = "/masking.html"
   status = 200
 
 [[redirects]]
@@ -17,6 +23,7 @@
   to = "/.netlify/functions/stats"
   status = 200
 
+# Redirect Link Pendek
 [[redirects]]
   from = "/:code"
   to = "/.netlify/functions/redirect?code=:code"
