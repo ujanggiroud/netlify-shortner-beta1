@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generator Link Masking Facebook</title>
+  <title>Generator Link Masking Facebook (1:1 Square)</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
   <style>
     body { padding: 20px; max-width: 800px; margin: 0 auto; }
     #resultBox { display: none; background: #e8f5e9; border: 1px solid #4caf50; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-    .preview-img { max-width: 200px; border-radius: 8px; margin-top: 10px; display: none; }
+    .preview-img { max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
-  <h2>🖼️ Generator Link Masking Facebook</h2>
+  <h2>🖼️ Generator Link Masking Facebook (Kotak 1:1)</h2>
   
   <article>
     <div id="resultBox">
@@ -39,14 +39,14 @@
       </label>
 
       <label>
-        3. Judul / Description Pratinjau Facebook (Opsional)
-        <input type="text" id="title" placeholder="contoh: harga heran">
+        3. Judul / Description (Opsional - Kosongkan jika ingin tanpa teks)
+        <input type="text" id="title" placeholder="Kosongkan agar hanya tampil gambar">
       </label>
 
       <label>
         4. Upload Gambar Thumbnail FB (Maks 2MB)
         <input type="file" id="imageFile" accept="image/*" required>
-        <small>Rekomendasi rasio gambar 1:1 atau 1200x630px.</small>
+        <small>Gambar akan otomatis dipotong presisi menjadi rasio kotak 1:1 untuk FB.</small>
       </label>
       <img id="imgPreview" class="preview-img" alt="Pratinjau Gambar">
 
@@ -67,7 +67,7 @@
 
   <script>
     const CLOUDINARY_CLOUD_NAME = 'zxscrlcq';
-    const CLOUDINARY_UPLOAD_PRESET = 'shopee_preset'; // Masukkan upload preset unsigned kamu
+    const CLOUDINARY_UPLOAD_PRESET = 'shopee_preset';
 
     const imageFileInput = document.getElementById('imageFile');
     const imgPreview = document.getElementById('imgPreview');
@@ -93,12 +93,9 @@
       if (!res.ok) throw new Error('Gagal upload gambar. Cek nama Upload Preset!');
       const data = await res.json();
       
-      // Paksa format output menjadi JPG agar ramah untuk Facebook Crawler
-      let cleanUrl = data.secure_url;
-      if (!cleanUrl.match(/\.(jpg|jpeg|png)$/i)) {
-        cleanUrl = cleanUrl.replace(/\/upload\//, '/upload/f_jpg/');
-      }
-      return cleanUrl;
+      // Paksa Cloudinary memotong gambar menjadi persis 1:1 (Square 1080x1080) & format JPG
+      let squareUrl = data.secure_url.replace(/\/upload\//, '/upload/c_fill,g_auto,w_1080,h_1080,f_jpg/');
+      return squareUrl;
     }
 
     document.getElementById('maskingForm').addEventListener('submit', async (e) => {
@@ -114,7 +111,7 @@
           return;
         }
 
-        btn.innerText = "Mengunggah gambar...";
+        btn.innerText = "Mengunggah & memotong gambar 1:1...";
         const imageUrl = await uploadImageToCloudinary(file);
 
         btn.innerText = "Menyimpan link...";
@@ -122,7 +119,7 @@
         const payload = {
           code: codeVal,
           url: document.getElementById('url').value.trim(),
-          title: document.getElementById('title').value.trim() || 'Klik untuk lihat detail promo',
+          title: document.getElementById('title').value.trim(),
           image: imageUrl,
           pixelId: document.getElementById('pixelId').value.trim(),
           tag: document.getElementById('tag').value.trim() || 'Masking FB'
@@ -135,12 +132,11 @@
         });
 
         if (res.ok) {
-          // FORMAT LINK BARU: /masking/slug
           const fullUrl = `${window.location.origin}/masking/${codeVal}`;
           document.getElementById('generatedUrl').value = fullUrl;
           document.getElementById('resultBox').style.display = 'block';
           navigator.clipboard.writeText(fullUrl).catch(() => {});
-          alert('Link Masking FB Berhasil Dibuat & Tersalin!');
+          alert('Link Masking FB (1:1) Berhasil Dibuat & Tersalin!');
         } else {
           alert('Gagal membuat link. Kode slug mungkin sudah terpakai.');
         }
